@@ -1,7 +1,3 @@
-/*
-* Copyright (C) 2014  Arjun Sreedharan
-* License: GPL version 2 or higher http://www.gnu.org/licenses/gpl.html
-*/
 #include "keyboard_map.h"
 
 /* there are 25 lines each of 80 columns; each element takes 2 bytes */
@@ -123,6 +119,21 @@ void clear_screen(void)
 	}
 }
 
+char* lastline;
+
+void keymemory(char keycode)
+{
+	char* keystring;
+
+	if(keycode == ENTER_KEY_CODE) {
+		lastline = keystring;
+		kprint(lastline);
+		return;
+	}
+
+	keystring = keycode;
+}
+
 void keyboard_handler_main(void)
 {
 	unsigned char status;
@@ -138,7 +149,10 @@ void keyboard_handler_main(void)
 		if(keycode < 0)
 			return;
 
+		keymemory(keycode);
+
 		if(keycode == ENTER_KEY_CODE) {
+			kprint_newline();
 			kprint_newline();
 			return;
 		}
@@ -150,10 +164,10 @@ void keyboard_handler_main(void)
 
 void kmain(void)
 {
-	const char *str = "my first kernel with keyboard support";
 	clear_screen();
-	kprint(str);
+	kprint("Welcome to OPCC-OS!");
 	kprint_newline();
+	kprint("Please enter your username:");
 	kprint_newline();
 
 	idt_init();
