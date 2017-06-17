@@ -119,20 +119,35 @@ void clear_screen(void)
 	}
 }
 
-char* lastline;
-
-void keymemory(char keycode)
-{
-	char* keystring;
-
-	if(keycode == ENTER_KEY_CODE) {
-		lastline = keystring;
-		kprint(lastline);
-		return;
-	}
-
-	keystring = keycode;
+int strlen (char *str) {
+    int len = 0;
+    while (*str != '\0') {
+        str++;
+        len++;
+    }
+    return len;
 }
+
+char* append(char* s, char c) {
+        int len = strlen(s);
+        s[len] = c;
+        s[len+1] = '\0';
+	return s;
+}
+
+void on_enter(char* lastline)
+{
+	if (*lastline == *"t")
+	{
+		kprint("Sucsess!");
+	}
+	else
+	{
+		kprint("Error! Please try again:");
+	}
+}
+
+char* keystring = "";
 
 void keyboard_handler_main(void)
 {
@@ -149,14 +164,17 @@ void keyboard_handler_main(void)
 		if(keycode < 0)
 			return;
 
-		keymemory(keycode);
-
 		if(keycode == ENTER_KEY_CODE) {
+			kprint_newline();
+			kprint_newline();
+			on_enter(keystring);
+			*keystring = *"";
 			kprint_newline();
 			kprint_newline();
 			return;
 		}
 
+		keystring = append(keystring, keyboard_map[(unsigned char) keycode]);
 		vidptr[current_loc++] = keyboard_map[(unsigned char) keycode];
 		vidptr[current_loc++] = 0x07;
 	}
