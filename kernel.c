@@ -137,7 +137,7 @@ char* append(char* s, char c) {
 
 void on_enter(char* lastline)
 {
-	if (*lastline == *"t")
+	if (*lastline == *"password")
 	{
 		kprint("Sucsess!");
 	}
