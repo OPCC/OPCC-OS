@@ -34,7 +34,7 @@ struct IDT_entry {
 struct IDT_entry IDT[IDT_SIZE];
 
 int isloggedin = 0;
-char* keystring = "";
+char* keystring = '\0';
 
 void idt_init()
 {
@@ -120,7 +120,7 @@ void clear_screen(void)
 	}
 }
 
-int strlen (char *str) {
+int stringlength (char *str) {
     int len = 0;
     while (*str != '\0') {
         str++;
@@ -129,38 +129,21 @@ int strlen (char *str) {
     return len;
 }
 
-int strcmp(char *a, char *b)
+int stringcomp(char *a, char *b)
 {
-    return (*a == *b && *b == '\0')? 0 : (*a == *b)? strcmp(++a, ++b): 1;
-}
-
-char* strcpy(char *dest, const char *src)
-
-{
-
-    /* Storing initial address of dest pointer */
-
-    char *temp = dest;
-
-    /* copy of string from source to destination up to null terminated character */
-
-    while (*dest++ = *src++);
-
-    return temp;
-
+    return (*a == *b && *b == '\0')? 0 : (*a == *b)? stringcomp(++a, ++b): 1;
 }
 
 char* append(char* s, char c) {
-        int len = strlen(s);
+        int len = stringlength(s);
         s[len] = c;
         s[len+1] = '\0';
 	return s;
 }
 
-int handlecommand(void)
+void handlecommand(void)
 {
-	char* password = "pass";
-	if ((strcmp(keystring, password) == 0) & isloggedin == 0)
+	if ((stringcomp(keystring, "pass") == 0) && isloggedin == 0)
 	{
 		isloggedin = 1;
 		kprint("You have now logged in!");
@@ -173,12 +156,24 @@ int handlecommand(void)
 	}
 	else
 	{
-		if (strcmp(keystring, "help") == 0)
+		if (stringcomp(keystring, "help") == 0)
 		{
-			kprint("Help Here");
+			kprint("Clear Screen: Alt");
+			kprint_newline();
+			kprint("Log out: exit");
+		}
+		else if (stringcomp(keystring, "exit") == 0)
+		{
+			clear_screen();
+			isloggedin = 0;
+			kprint("Please enter your password:");
+		}
+		else
+		{
+			kprint("That command was not recognised! Please try again, or type 'help' for the help menu.");
 		}
 	}
-	keystring = strcpy(keystring, "");	
+	*keystring = '\0';
 }
 
 int handlekeycode(char keycode)
@@ -195,20 +190,10 @@ int handlekeycode(char keycode)
 		return 1;
 	}
 
-	if(keycode == 0x38)
+	else if(keycode == 0x38)
 	{
 		clear_screen();
-			if (isloggedin == 0)
-			{
-				isloggedin = 1;
-			}
-			else if (isloggedin == 0)
-			{
-				kprint("Welcome to OPCC-OS!");
-				kprint_newline();
-				kprint("Please enter your password:");
-				kprint_newline();
-			}
+
 		kprint("OPCC-OS > ");
 		return 1;
 	}
@@ -228,12 +213,13 @@ void keyboard_handler_main(void)
 	/* Lowest bit of status will be set if buffer is not empty */
 	if (status & 0x01) {
 		keycode = read_port(KEYBOARD_DATA_PORT);
-		if(keycode < 0)
+
+		if(handlekeycode(keycode) == 1)
 		{
 			return;
 		}
 
-		if(handlekeycode(keycode) == 1)
+		if(keycode < 0)
 		{
 			return;
 		}
@@ -251,6 +237,8 @@ void kmain(void)
 	kprint_newline();
 	kprint("Please enter your password:");
 	kprint_newline();
+	kprint("OPCC-OS > ");
+	keystring = "";
 
 	idt_init();
 	kb_init();
