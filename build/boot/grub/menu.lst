@@ -1,0 +1,5 @@
+default 0
+#timeout 30
+ 
+title OPCC-OS
+kernel /boot/kernel
