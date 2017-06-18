@@ -13,6 +13,7 @@
 #define KERNEL_CODE_SEGMENT_OFFSET 0x08
 
 #define ENTER_KEY_CODE 0x1C
+#define ALT_KEY_CODE 0x38
 
 extern unsigned char keyboard_map[128];
 extern void keyboard_handler(void);
@@ -116,6 +117,7 @@ void clear_screen(void)
 	while (i < SCREENSIZE) {
 		vidptr[i++] = ' ';
 		vidptr[i++] = 0x07;
+		current_loc = 0;
 	}
 }
 
@@ -135,19 +137,50 @@ char* append(char* s, char c) {
 	return s;
 }
 
+int isloggedin = 0;
+
+void os()
+{
+	kprint("You have now logged in!");
+}
+
 void on_enter(char* lastline)
 {
-	if (*lastline == *"password")
+	if (*lastline == *"password" & isloggedin == 0)
 	{
-		kprint("Sucsess!");
+		isloggedin = 1;
+		os();
 	}
-	else
+	else if (isloggedin == 0)
 	{
 		kprint("Error! Please try again:");
 	}
 }
 
 char* keystring = "";
+
+int handle(char keycode)
+{
+
+	if(keycode == ENTER_KEY_CODE) {
+		kprint_newline();
+		kprint_newline();
+		on_enter(keystring);
+		*keystring = *"";
+		kprint_newline();
+		kprint_newline();
+		return 1;
+	}
+
+	if(keycode == ALT_KEY_CODE)
+	{
+		clear_screen();
+		return 1;
+	}
+
+	return 0;
+
+}
 
 void keyboard_handler_main(void)
 {
@@ -164,15 +197,8 @@ void keyboard_handler_main(void)
 		if(keycode < 0)
 			return;
 
-		if(keycode == ENTER_KEY_CODE) {
-			kprint_newline();
-			kprint_newline();
-			on_enter(keystring);
-			*keystring = *"";
-			kprint_newline();
-			kprint_newline();
+		if (handle(keycode) == 1)
 			return;
-		}
 
 		keystring = append(keystring, keyboard_map[(unsigned char) keycode]);
 		vidptr[current_loc++] = keyboard_map[(unsigned char) keycode];
@@ -185,7 +211,7 @@ void kmain(void)
 	clear_screen();
 	kprint("Welcome to OPCC-OS!");
 	kprint_newline();
-	kprint("Please enter your username:");
+	kprint("Please enter your password:");
 	kprint_newline();
 
 	idt_init();
