@@ -12,9 +12,6 @@
 #define INTERRUPT_GATE 0x8e
 #define KERNEL_CODE_SEGMENT_OFFSET 0x08
 
-#define ENTER_KEY_CODE 0x1C
-#define ALT_KEY_CODE 0x38
-
 extern unsigned char keyboard_map[128];
 extern void keyboard_handler(void);
 extern char read_port(unsigned short port);
@@ -36,8 +33,10 @@ struct IDT_entry {
 
 struct IDT_entry IDT[IDT_SIZE];
 
+int isloggedin = 0;
+char* keystring = "";
 
-void idt_init(void)
+void idt_init()
 {
 	unsigned long keyboard_address;
 	unsigned long idt_address;
@@ -130,6 +129,27 @@ int strlen (char *str) {
     return len;
 }
 
+int strcmp(char *a, char *b)
+{
+    return (*a == *b && *b == '\0')? 0 : (*a == *b)? strcmp(++a, ++b): 1;
+}
+
+char* strcpy(char *dest, const char *src)
+
+{
+
+    /* Storing initial address of dest pointer */
+
+    char *temp = dest;
+
+    /* copy of string from source to destination up to null terminated character */
+
+    while (*dest++ = *src++);
+
+    return temp;
+
+}
+
 char* append(char* s, char c) {
         int len = strlen(s);
         s[len] = c;
@@ -137,49 +157,63 @@ char* append(char* s, char c) {
 	return s;
 }
 
-int isloggedin = 0;
-
-void os()
+int handlecommand(void)
 {
-	kprint("You have now logged in!");
-}
-
-void on_enter(char* lastline)
-{
-	if (*lastline == *"password" & isloggedin == 0)
+	char* password = "pass";
+	if ((strcmp(keystring, password) == 0) & isloggedin == 0)
 	{
 		isloggedin = 1;
-		os();
+		kprint("You have now logged in!");
+		kprint_newline();
+		kprint("To open the help menu, type 'help'.");
 	}
 	else if (isloggedin == 0)
 	{
 		kprint("Error! Please try again:");
 	}
+	else
+	{
+		if (strcmp(keystring, "help") == 0)
+		{
+			kprint("Help Here");
+		}
+	}
+	keystring = strcpy(keystring, "");	
 }
 
-char* keystring = "";
-
-int handle(char keycode)
+int handlekeycode(char keycode)
 {
 
-	if(keycode == ENTER_KEY_CODE) {
+	if(keycode == 0x1C)
+	{
 		kprint_newline();
 		kprint_newline();
-		on_enter(keystring);
-		*keystring = *"";
+		handlecommand();
 		kprint_newline();
 		kprint_newline();
+		kprint("OPCC-OS > ");
 		return 1;
 	}
 
-	if(keycode == ALT_KEY_CODE)
+	if(keycode == 0x38)
 	{
 		clear_screen();
+			if (isloggedin == 0)
+			{
+				isloggedin = 1;
+			}
+			else if (isloggedin == 0)
+			{
+				kprint("Welcome to OPCC-OS!");
+				kprint_newline();
+				kprint("Please enter your password:");
+				kprint_newline();
+			}
+		kprint("OPCC-OS > ");
 		return 1;
 	}
 
 	return 0;
-
 }
 
 void keyboard_handler_main(void)
@@ -195,10 +229,14 @@ void keyboard_handler_main(void)
 	if (status & 0x01) {
 		keycode = read_port(KEYBOARD_DATA_PORT);
 		if(keycode < 0)
+		{
 			return;
+		}
 
-		if (handle(keycode) == 1)
+		if(handlekeycode(keycode) == 1)
+		{
 			return;
+		}
 
 		keystring = append(keystring, keyboard_map[(unsigned char) keycode]);
 		vidptr[current_loc++] = keyboard_map[(unsigned char) keycode];
